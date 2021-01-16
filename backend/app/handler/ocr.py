@@ -7,17 +7,6 @@ import random
 GENERATE_SALT_CHARACTERS = "12345676890abcdefghijkmnlopqrstuvwxyz"
 
 
-@route(r'/test')
-class TestHandler(BaseHandler):
-    @json_serialize
-    def post(self):
-        return {"dk": "hello"}
-
-    @json_serialize
-    def get(self):
-        return {"hello": "world!"}
-
-
 @route(r'/ocr/upload')
 class OCRHandler(BaseHandler):
 
@@ -57,11 +46,15 @@ class OCRHandler(BaseHandler):
             "letters": letters
         }
 
+
+@route(r'/ocr/records')
+class OCRRecordHandler(BaseHandler):
+
     @json_serialize
     @need_auth
     def get(self):
-        page = self.get_int("page")
-        page_size = self.get_int("page_size")
+        page = self.get_int("page", 0)
+        page_size = self.get_int("page_size", 5)
         user_id = self.get_argument("id")
         records = ocr.get_records(user_id, page, page_size)
         return [record.to_dict() for record in records]
@@ -75,8 +68,11 @@ class AuthHandler(BaseHandler):
         username = self.get_argument("username")
         password = self.get_argument("password")
         salt = random.choices(GENERATE_SALT_CHARACTERS, k=6)
+        salt = "".join(salt)
         password = hash(password + salt)
         user = User.add(username=username, password=password, salt=salt)
+        data = user.to_base_dict()
+        data.pop("password")
         return {
-            "user": user
+            "user": data
         }

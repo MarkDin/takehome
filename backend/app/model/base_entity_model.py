@@ -4,7 +4,8 @@
 1. 装饰器中使用了锁来保证多线程并发也不会生成多个实例，使用singleton装饰的类都可以保证全局只存在一个实例
 2. mysql_cursor利用了with的上下文管理机制，简化了数据库连接的手动关闭操作
 """
-from datetime import datetime
+from datetime import datetime, date
+from decimal import Decimal
 
 from backend.conf import MYSQL_CONF
 import logging
@@ -210,7 +211,6 @@ class BaseModel(object):
 
     @classmethod
     def gets(cls, ids, filter_none=False):
-        cls.get_multi_by_mc(ids)
         objs = [cls.get(i) for i in ids]
         if filter_none:
             objs = list(filter(None, objs))
@@ -262,6 +262,18 @@ class BaseModel(object):
                 camel_case_key = self._camel_case_fields()[field]
                 result[camel_case_key] = self._encode_value(full[field])
         return result
+
+    @classmethod
+    def _encode_value(cls, value):
+        if isinstance(value, datetime):
+            return value.strftime("%Y-%m-%d %H:%M:%S")
+        elif isinstance(value, date):
+            return value.strftime("%Y-%m-%d")
+        elif isinstance(value, Decimal):
+            return float(value)
+        elif isinstance(value, BaseModel):
+            return value.to_base_dict()
+        return value
 
     @classmethod
     def _camel_case_fields(cls):

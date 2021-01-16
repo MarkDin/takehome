@@ -23,7 +23,7 @@ class BaseHandler(RequestHandler):
     url_prefix = "/api"
 
     def get_current_user(self):
-        token = self.get_body_argument("token")
+        token = self.request.headers.get("token")
         return self.check_token(token)
 
     def check_token(self, token):
